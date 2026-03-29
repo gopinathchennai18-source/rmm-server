@@ -1,3 +1,14 @@
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+let commands = {};
+
+app.get('/', (req, res) => {
+    res.send("Server is running");
+});
+
 app.get('/api/get-command', (req, res) => {
     const pc = req.query.pc;
     res.json({ command: commands[pc] || null });
