@@ -20,10 +20,20 @@ app.post('/api/send-command', (req, res) => {
     res.send("Command sent");
 });
 
+let outputs = {};
+
+// Receive output from agent
 app.post('/api/upload', (req, res) => {
-    res.send("File received");
+    const { computer, output } = req.body;
+    outputs[computer] = output;
+    res.send("Output received");
 });
 
+// View output
+app.get('/api/get-output', (req, res) => {
+    const pc = req.query.pc;
+    res.json({ output: outputs[pc] || null });
+});
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, '0.0.0.0', () => {
