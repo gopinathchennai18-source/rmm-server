@@ -52,3 +52,26 @@ app.get('/api/list-files', (req, res) => {
         res.status(500).send("Error reading directory");
     }
 });
+// Store file content
+let fileStore = {};
+
+// Receive file data
+app.post('/api/upload-file', (req, res) => {
+    const { computer, filename, content } = req.body;
+    fileStore[computer] = { filename, content };
+    res.send("File received");
+});
+
+// Download file
+app.get('/api/download-file', (req, res) => {
+    const pc = req.query.pc;
+
+    if (!fileStore[pc]) {
+        return res.send("No file available");
+    }
+
+    const file = fileStore[pc];
+
+    res.setHeader('Content-Disposition', `attachment; filename=${file.filename}`);
+    res.send(file.content);
+});
