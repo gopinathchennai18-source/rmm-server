@@ -29,3 +29,16 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
 });
+const fs = require('fs');
+const path = require('path');
+
+// List files
+app.get('/api/list-files', (req, res) => {
+    const dirPath = req.query.path || "C:\\";
+    try {
+        const files = fs.readdirSync(dirPath);
+        res.json(files);
+    } catch (err) {
+        res.status(500).send("Error reading directory");
+    }
+});
