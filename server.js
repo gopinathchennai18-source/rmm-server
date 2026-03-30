@@ -82,14 +82,22 @@ app.post("/api/upload-file", (req, res) => {
 // -----------------------------
 // 📥 DOWNLOAD FILE
 // -----------------------------
-app.get("/api/download-file", (req, res) => {
-  const pc = req.query.pc;
+app.get('/api/download-file', (req, res) => {
+    const pc = req.query.pc;
 
-  if (!files[pc]) {
-    return res.send("No file available");
-  }
+    if (fileStore[pc]) {
 
-  res.json(files[pc]);
+        const file = fileStore[pc];
+        const buffer = Buffer.from(file.content, 'base64');
+
+        res.setHeader('Content-Disposition', `attachment; filename=${file.filename}`);
+        res.setHeader('Content-Type', 'application/octet-stream');
+
+        res.send(buffer);
+
+    } else {
+        res.send("No file available");
+    }
 });
 
 // -----------------------------
